@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SwarKhata — Voice Billing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy-dark:#123540;
+    --navy:#1B4B5A;
+    --navy-light:#2F6273;
+    --gold:#E8A33D;
+    --gold-soft:#F6D9A8;
+    --cream:#F7F4EE;
+    --paper:#FFFDF8;
+    --ink:#212121;
+    --muted:#6B7A80;
+    --good:#3F8F5F;
+    --line:#E4DFD1;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background: var(--cream);
+    font-family:'Inter', sans-serif;
+    color:var(--ink);
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+  }
+  .phone{
+    width:100%;
+    max-width:430px;
+    min-height:100vh;
+    background:var(--cream);
+    position:relative;
+    overflow-x:hidden;
+    padding-bottom:2.5rem;
+  }
+
+  /* ---------- HEADER ---------- */
+  header{
+    background:var(--navy-dark);
+    padding:1.4rem 1.4rem 2.6rem;
+    border-radius:0 0 28px 28px;
+    position:relative;
+    color:white;
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:0.6rem;
+  }
+  .brand-mark{
+    width:34px;height:34px;border-radius:50%;
+    background:var(--gold);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Fraunces',serif; font-weight:700; color:var(--navy-dark); font-size:16px;
+  }
+  .brand-name{
+    font-family:'Fraunces',serif;
+    font-size:1.35rem;
+    font-weight:600;
+    letter-spacing:0.2px;
+  }
+  .brand-sub{
+    font-size:0.78rem;
+    color:#B9C6C9;
+    margin-top:0.15rem;
+  }
+  .date-pill{
+    position:absolute;
+    top:1.5rem; right:1.4rem;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.72rem;
+    background:rgba(255,255,255,0.08);
+    padding:0.35rem 0.6rem;
+    border-radius:20px;
+    color:#CBD4D6;
+  }
+
+  /* ---------- STAT STRIP (overlaps header) ---------- */
+  .stat-strip{
+    margin:-1.8rem 1.1rem 0;
+    background:var(--paper);
+    border-radius:18px;
+    box-shadow:0 10px 24px rgba(18,53,64,0.14);
+    display:flex;
+    position:relative;
+    z-index:2;
+  }
+  .stat{
+    flex:1;
+    text-align:center;
+    padding:0.9rem 0.4rem;
+    border-right:1px solid var(--line);
+  }
+  .stat:last-child{border-right:none;}
+  .stat b{
+    display:block;
+    font-family:'Fraunces',serif;
+    font-size:1.25rem;
+    color:var(--navy);
+  }
+  .stat span{
+    font-size:0.66rem;
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:0.4px;
+  }
+
+  /* ---------- MIC SECTION ---------- */
+  .mic-zone{
+    padding:2.1rem 1.4rem 0.6rem;
+    text-align:center;
+  }
+  .mic-wrap{
+    position:relative;
+    width:150px;height:150px;
+    margin:0 auto 0.9rem;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .ring{
+    position:absolute;
+    border-radius:50%;
+    border:2px solid var(--gold);
+    opacity:0;
+  }
+  .mic-wrap.listening .ring{ animation: pulse 1.8s ease-out infinite; }
+  .ring.r1{width:100%;height:100%; animation-delay:0s;}
+  .ring.r2{width:100%;height:100%; animation-delay:0.5s;}
+  .ring.r3{width:100%;height:100%; animation-delay:1s;}
+  @keyframes pulse{
+    0%{ transform:scale(0.62); opacity:0.55; }
+    100%{ transform:scale(1.15); opacity:0; }
+  }
+  #micBtn{
+    width:104px;height:104px;
+    border-radius:50%;
+    border:none;
+    background:var(--navy);
+    color:var(--gold);
+    cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 10px 22px rgba(18,53,64,0.28);
+    transition:transform 0.15s ease, background 0.2s ease;
+    z-index:1;
+  }
+  #micBtn:active{ transform:scale(0.96); }
+  #micBtn.on{ background:var(--gold); color:var(--navy-dark); }
+  #micBtn svg{ width:38px; height:38px; }
+
+  .mic-hint{
+    font-size:0.85rem;
+    color:var(--muted);
+    margin-top:0.4rem;
+  }
+  .mic-hint b{ color:var(--navy); }
+
+  select#langSelect{
+    margin-top:0.7rem;
+    font-family:'Inter',sans-serif;
+    font-size:0.75rem;
+    color:var(--navy);
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:20px;
+    padding:0.35rem 0.8rem;
+  }
+
+  /* ---------- TRANSCRIPT ---------- */
+  .card{
+    margin:1.1rem 1.4rem 0;
+    background:var(--paper);
+    border-radius:16px;
+    padding:1rem 1.1rem;
+    box-shadow:0 4px 14px rgba(18,53,64,0.08);
+  }
+  .card-label{
+    font-size:0.7rem;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    color:var(--muted);
+    font-weight:600;
+    margin-bottom:0.4rem;
+  }
+  .transcript-text{
+    font-size:0.95rem;
+    color:var(--ink);
+    min-height:1.3em;
+  }
+  .transcript-text.placeholder{ color:#B7BFC1; font-style:italic; }
+
+  /* ---------- CONFIRM CARD ---------- */
+  .confirm-card{ display:none; }
+  .confirm-card.show{ display:block; }
+  .field-row{
+    display:flex;
+    gap:0.6rem;
+    margin-bottom:0.7rem;
+  }
+  .field{ flex:1; }
+  .field label{
+    display:block;
+    font-size:0.68rem;
+    color:var(--muted);
+    margin-bottom:0.25rem;
+    font-weight:600;
+  }
+  .field input{
+    width:100%;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.9rem;
+    padding:0.5rem 0.6rem;
+    border-radius:9px;
+    border:1px solid var(--line);
+    background:var(--cream);
+    color:var(--ink);
+  }
+  .field input:focus{ outline:2px solid var(--gold); outline-offset:1px; }
+  .btn-row{ display:flex; gap:0.6rem; margin-top:0.3rem; }
+  button.primary, button.ghost{
+    flex:1;
+    border:none;
+    border-radius:10px;
+    padding:0.65rem 0.6rem;
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:0.85rem;
+    cursor:pointer;
+  }
+  button.primary{ background:var(--navy); color:white; }
+  button.primary:hover{ background:var(--navy-light); }
+  button.ghost{ background:transparent; color:var(--muted); border:1px solid var(--line); }
+
+  /* ---------- INVOICE (receipt look) ---------- */
+  .receipt-wrap{ display:none; margin:1.1rem 1.4rem 0; }
+  .receipt-wrap.show{ display:block; }
+  .receipt{
+    background:var(--paper);
+    padding:1.1rem 1.1rem 0.9rem;
+    font-family:'IBM Plex Mono', monospace;
+    border-radius:10px 10px 0 0;
+    box-shadow:0 4px 14px rgba(18,53,64,0.08);
+  }
+  .receipt-head{ text-align:center; margin-bottom:0.6rem; }
+  .receipt-head .rname{ font-family:'Fraunces',serif; font-weight:600; font-size:1.05rem; color:var(--navy); }
+  .receipt-head .rmeta{ font-size:0.68rem; color:var(--muted); margin-top:0.15rem; }
+  .receipt-line{
+    display:flex; justify-content:space-between;
+    font-size:0.85rem; padding:0.3rem 0;
+    border-bottom:1px dashed var(--line);
+  }
+  .receipt-total{
+    display:flex; justify-content:space-between;
+    font-size:0.95rem; font-weight:700; color:var(--navy);
+    padding-top:0.5rem;
+  }
+  .zigzag{
+    height:12px;
+    background:
+      linear-gradient(135deg, var(--paper) 25%, transparent 25%) 0 0,
+      linear-gradient(225deg, var(--paper) 25%, transparent 25%) 0 0;
+    background-size:14px 14px;
+    background-repeat:repeat-x;
+  }
+  .receipt-actions{
+    display:flex; gap:0.6rem;
+    margin-top:0.7rem;
+  }
+  .wa-btn{
+    flex:1; background:var(--good); color:white; border:none;
+    border-radius:10px; padding:0.6rem; font-weight:600; font-size:0.82rem;
+    font-family:'Inter',sans-serif; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:0.4rem;
+  }
+
+  /* ---------- HISTORY ---------- */
+  .history{ margin:1.3rem 1.4rem 0; }
+  .history h3{
+    font-family:'Fraunces',serif; font-size:1.05rem; color:var(--navy);
+    margin:0 0 0.6rem;
+  }
+  .hist-item{
+    display:flex; justify-content:space-between; align-items:center;
+    background:var(--paper); border-radius:12px;
+    padding:0.65rem 0.85rem; margin-bottom:0.5rem;
+    box-shadow:0 2px 8px rgba(18,53,64,0.06);
+  }
+  .hist-item .hi-name{ font-size:0.88rem; font-weight:600; color:var(--ink); }
+  .hist-item .hi-meta{ font-size:0.72rem; color:var(--muted); }
+  .hist-item .hi-price{ font-family:'IBM Plex Mono', monospace; font-weight:600; color:var(--navy); }
+  .empty-hint{
+    font-size:0.8rem; color:var(--muted); text-align:center;
+    padding:1.2rem 0; font-style:italic;
+  }
+
+  .sr-only{
+    position:absolute; width:1px; height:1px; overflow:hidden;
+    clip:rect(0,0,0,0); white-space:nowrap;
+  }
+  button:focus-visible, select:focus-visible{
+    outline:2px solid var(--gold); outline-offset:2px;
+  }
+</style>
+</head>
+<body>
+
+<div class="phone">
+
+  <header>
+    <div class="brand">
+      <div class="brand-mark">स</div>
+      <div>
+        <div class="brand-name">SwarKhata</div>
+        <div class="brand-sub">Speak a sale. Build your credit history.</div>
+      </div>
+    </div>
+    <div class="date-pill" id="dateNow">—</div>
+  </header>
+
+  <div class="stat-strip">
+    <div class="stat"><b id="statTotal">₹0</b><span>Today's sales</span></div>
+    <div class="stat"><b id="statCount">0</b><span>Transactions</span></div>
+    <div class="stat"><b id="statStreak">1</b><span>Day streak</span></div>
+  </div>
+
+  <div class="mic-zone">
+    <div class="mic-wrap" id="micWrap">
+      <div class="ring r1"></div>
+      <div class="ring r2"></div>
+      <div class="ring r3"></div>
+      <button id="micBtn" aria-label="Start speaking a transaction">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></svg>
+      </button>
+    </div>
+    <div class="mic-hint" id="micHint">Tap to <b>speak a sale</b> — e.g. "2 kilo tomato, 60 rupees"</div>
+    <select id="langSelect" aria-label="Recognition language">
+      <option value="en-IN">English (India)</option>
+      <option value="hi-IN">हिंदी (Hindi)</option>
+      <option value="mr-IN">मराठी (Marathi)</option>
+    </select>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Live transcript</div>
+    <div class="transcript-text placeholder" id="transcriptText">Nothing yet — tap the mic and speak a sale out loud.</div>
+  </div>
+
+  <div class="card confirm-card" id="confirmCard">
+    <div class="card-label">Confirm details — edit anything that's wrong</div>
+    <div class="field-row">
+      <div class="field">
+        <label for="fItem">Item</label>
+        <input id="fItem" type="text" placeholder="e.g. Tomato">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label for="fQty">Quantity</label>
+        <input id="fQty" type="text" placeholder="e.g. 2 kg">
+      </div>
+      <div class="field">
+        <label for="fPrice">Price (₹)</label>
+        <input id="fPrice" type="text" placeholder="e.g. 60">
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="ghost" id="discardBtn">Discard</button>
+      <button class="primary" id="confirmBtn">Confirm &amp; generate invoice</button>
+    </div>
+  </div>
+
+  <div class="receipt-wrap" id="receiptWrap">
+    <div class="receipt">
+      <div class="receipt-head">
+        <div class="rname">SwarKhata Receipt</div>
+        <div class="rmeta" id="receiptMeta">—</div>
+      </div>
+      <div class="receipt-line">
+        <span id="rItem">—</span>
+        <span id="rQty">—</span>
+      </div>
+      <div class="receipt-total">
+        <span>Total</span>
+        <span id="rTotal">₹0</span>
+      </div>
+      <div class="receipt-actions">
+        <button class="wa-btn" id="waBtn">Share on WhatsApp</button>
+      </div>
+    </div>
+    <div class="zigzag"></div>
+  </div>
+
+  <div class="history">
+    <h3>Today's ledger</h3>
+    <div id="historyList">
+      <div class="empty-hint">No sales logged yet today.</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  // ---------- Setup ----------
+  const dateNow = document.getElementById('dateNow');
+  dateNow.textContent = new Date().toLocaleDateString('en-IN', { day:'2-digit', month:'short' });
+
+  const micBtn = document.getElementById('micBtn');
+  const micWrap = document.getElementById('micWrap');
+  const micHint = document.getElementById('micHint');
+  const langSelect = document.getElementById('langSelect');
+  const transcriptText = document.getElementById('transcriptText');
+
+  const confirmCard = document.getElementById('confirmCard');
+  const fItem = document.getElementById('fItem');
+  const fQty = document.getElementById('fQty');
+  const fPrice = document.getElementById('fPrice');
+  const confirmBtn = document.getElementById('confirmBtn');
+  const discardBtn = document.getElementById('discardBtn');
+
+  const receiptWrap = document.getElementById('receiptWrap');
+  const receiptMeta = document.getElementById('receiptMeta');
+  const rItem = document.getElementById('rItem');
+  const rQty = document.getElementById('rQty');
+  const rTotal = document.getElementById('rTotal');
+  const waBtn = document.getElementById('waBtn');
+
+  const statTotal = document.getElementById('statTotal');
+  const statCount = document.getElementById('statCount');
+  const historyList = document.getElementById('historyList');
+
+  // In-memory state only (no browser storage — resets on reload, matches prototype scope)
+  let transactions = [];
+  let listening = false;
+  let recognition = null;
+
+  const unitWords = ['kilo','kg','kgs','litre','liter','ltr','piece','pieces','pcs','dozen','gram','grams','packet','packets'];
+  const currencyWords = ['rupees','rupee','rs','₹'];
+
+  // ---------- Naive parser (stand-in for the real LLM parsing layer) ----------
+  function parseTranscript(text){
+    const lower = text.toLowerCase();
+    const numbers = lower.match(/\d+(\.\d+)?/g) || [];
+    let qty = numbers.length > 0 ? numbers[0] : '';
+    let price = numbers.length > 1 ? numbers[numbers.length - 1] : (numbers[0] || '');
+
+    let words = lower
+      .replace(/\d+(\.\d+)?/g, ' ')
+      .split(/\s+/)
+      .filter(w => w && !unitWords.includes(w) && !currencyWords.includes(w));
+
+    let item = words.join(' ').trim();
+    item = item ? item.charAt(0).toUpperCase() + item.slice(1) : 'Item';
+
+    // guess a unit label to attach to qty
+    const foundUnit = unitWords.find(u => lower.includes(u));
+    const qtyLabel = qty ? `${qty}${foundUnit ? ' ' + foundUnit : ' pc'}` : '1 pc';
+
+    return { item, qty: qtyLabel, price: price || '0' };
+  }
+
+  // ---------- Speech recognition ----------
+  function getRecognition(){
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) return null;
+    const r = new SR();
+    r.lang = langSelect.value;
+    r.interimResults = true;
+    r.continuous = false;
+    return r;
+  }
+
+  micBtn.addEventListener('click', function(){
+    if (listening){
+      if (recognition) recognition.stop();
+      return;
+    }
+
+    recognition = getRecognition();
+    if (!recognition){
+      micHint.innerHTML = 'Voice input isn\'t supported in this browser — try <b>Chrome</b> or <b>Edge</b> on desktop or Android, or type the sale manually below.';
+      confirmCard.classList.add('show');
+      return;
+    }
+
+    listening = true;
+    micWrap.classList.add('listening');
+    micBtn.classList.add('on');
+    micHint.innerHTML = '<b>Listening...</b> speak the sale now';
+    transcriptText.classList.remove('placeholder');
+    transcriptText.textContent = '';
+
+    recognition.onresult = function(e){
+      let text = '';
+      for (let i = 0; i < e.results.length; i++){
+        text += e.results[i][0].transcript;
+      }
+      transcriptText.textContent = text;
+    };
+
+    recognition.onerror = function(){
+      micHint.innerHTML = 'Didn\'t catch that clearly — tap the mic to try again, or edit the fields manually below.';
+    };
+
+    recognition.onend = function(){
+      listening = false;
+      micWrap.classList.remove('listening');
+      micBtn.classList.remove('on');
+      micHint.innerHTML = 'Tap to <b>speak a sale</b> — e.g. "2 kilo tomato, 60 rupees"';
+
+      const finalText = transcriptText.textContent.trim();
+      if (finalText){
+        const parsed = parseTranscript(finalText);
+        fItem.value = parsed.item;
+        fQty.value = parsed.qty;
+        fPrice.value = parsed.price;
+        confirmCard.classList.add('show');
+      }
+    };
+
+    recognition.start();
+  });
+
+  // ---------- Confirm / discard ----------
+  discardBtn.addEventListener('click', function(){
+    confirmCard.classList.remove('show');
+    receiptWrap.classList.remove('show');
+    transcriptText.classList.add('placeholder');
+    transcriptText.textContent = 'Nothing yet — tap the mic and speak a sale out loud.';
+  });
+
+  confirmBtn.addEventListener('click', function(){
+    const item = fItem.value.trim() || 'Item';
+    const qty = fQty.value.trim() || '1 pc';
+    const price = parseFloat(fPrice.value) || 0;
+
+    const txn = {
+      item, qty, price,
+      time: new Date().toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' })
+    };
+    transactions.push(txn);
+
+    // Render receipt
+    receiptMeta.textContent = `${txn.time}  ·  Receipt #${String(transactions.length).padStart(3,'0')}`;
+    rItem.textContent = item;
+    rQty.textContent = qty;
+    rTotal.textContent = '₹' + price.toFixed(0);
+    receiptWrap.classList.add('show');
+
+    waBtn.onclick = function(){
+      const msg = encodeURIComponent(`SwarKhata Receipt\n${item} — ${qty}\nTotal: ₹${price.toFixed(0)}\nTime: ${txn.time}`);
+      window.open(`https://wa.me/?text=${msg}`, '_blank');
+    };
+
+    confirmCard.classList.remove('show');
+    updateDashboard();
+  });
+
+  // ---------- Dashboard + history ----------
+  function updateDashboard(){
+    const total = transactions.reduce((sum, t) => sum + t.price, 0);
+    statTotal.textContent = '₹' + total.toFixed(0);
+    statCount.textContent = transactions.length;
+
+    if (transactions.length === 0){
+      historyList.innerHTML = '<div class="empty-hint">No sales logged yet today.</div>';
+      return;
+    }
+    historyList.innerHTML = transactions.slice().reverse().map(t => `
+      <div class="hist-item">
+        <div>
+          <div class="hi-name">${t.item}</div>
+          <div class="hi-meta">${t.qty} · ${t.time}</div>
+        </div>
+        <div class="hi-price">₹${t.price.toFixed(0)}</div>
+      </div>
+    `).join('');
+  }
+
+  updateDashboard();
+})();
+</script>
+
+</body>
+</html>
